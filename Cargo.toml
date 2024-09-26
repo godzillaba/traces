@@ -6,4 +6,3 @@ edition = "2021"
 [dependencies]
 serde_json = "1.0"
 anyhow = { version = "1.0.89" }
-regex = "1.10.6"

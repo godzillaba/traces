@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use regex::Regex;
 use serde_json::Value;
 use std::env;
 use std::io::{self, Read};
@@ -23,24 +22,14 @@ fn dfs_has_call(call: &Value, target_address: &str) -> bool {
 }
 
 fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        anyhow::bail!("Usage: {} <target_address>", args[0]);
-    }
-    let target_address = &args[1];
+    let target_address = env::args().nth(1).context("Missing target address argument")?;
 
     let mut input = String::new();
-    io::stdin()
-        .read_to_string(&mut input)
-        .context("Failed to read from stdin")?;
+    io::stdin().read_to_string(&mut input).context("Failed to read from stdin")?;
     input.make_ascii_lowercase();
 
-    // Perform a quick check for the target address
-    let address_regex =
-        Regex::new(&regex::escape(target_address)).context("Failed to create regex")?;
-
-    if !address_regex.is_match(&input) {
-        // Target address not found, exit early
+    // Quick check for the target address (case-insensitive), target already lower case
+    if !input.contains(&target_address) {
         return Ok(());
     }
 
@@ -55,7 +44,7 @@ fn main() -> Result<()> {
         .expect("result not an array");
 
     for trace in traces.iter() {
-        if dfs_has_call(&trace["result"], target_address) {
+        if dfs_has_call(&trace["result"], &target_address) {
             println!("{}", trace);
         }
     }
