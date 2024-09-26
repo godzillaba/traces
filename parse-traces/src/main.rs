@@ -12,6 +12,20 @@ struct Call {
     from: String,
 }
 
+impl Call {
+    fn from(value: &Value) -> Self {
+        Self {
+            call_type: value["type"].as_str().unwrap_or_default().to_string(),
+            selector: if value["input"].as_str().unwrap_or_default().len() >= 10 {
+                Some(value["input"].as_str().unwrap_or_default()[0..10].to_string())
+            } else {
+                None
+            },
+            from: value["from"].as_str().unwrap_or_default().to_string(),
+        }
+    }
+}
+
 // run a dfs to flatten the calls
 fn dfs_flatten_calls<'a>(call: &'a Value, call_set: &mut Vec<&'a Value>) {
     call_set.push(call);
@@ -20,21 +34,6 @@ fn dfs_flatten_calls<'a>(call: &'a Value, call_set: &mut Vec<&'a Value>) {
         for subcall in subcalls.iter() {
             dfs_flatten_calls(subcall, call_set);
         }
-    }
-}
-
-fn value_to_call_struct(value: &Value) -> Call {
-    let input = value["input"].as_str().unwrap_or_default();
-    let selector = if input.len() >= 10 {
-        Some(input[0..10].to_string())
-    } else {
-        None
-    };
-
-    Call {
-        call_type: value["type"].as_str().unwrap_or_default().to_string(),
-        selector,
-        from: value["from"].as_str().unwrap_or_default().to_string(),
     }
 }
 
@@ -59,7 +58,7 @@ fn main() -> Result<()> {
         for call in flattened_calls.iter() {
             if let Some(to) = call["to"].as_str() {
                 if to.to_ascii_lowercase() == target_address {
-                    call_set.insert(value_to_call_struct(call));
+                    call_set.insert(Call::from(call));
                 }
             }
         }
