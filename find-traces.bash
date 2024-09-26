@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set -e
+
 cargo build --release
+
+mkdir -p data
 
 # we take 3 args, start block, end block, target address
 
@@ -14,10 +18,10 @@ target=$(echo $3 | tr '[:upper:]' '[:lower:]')
 
 export target
 
-seq $1 $2 | parallel -j 16 --resume-failed --retries 3 --joblog joblog.txt \
+seq $1 $2 | parallel -j 16 --resume-failed --retries 3 --joblog data/find-traces-joblog.txt \
     'block_hex=$(printf "0x%x" {});
     curl -s -X POST -H "Content-Type: application/json" \
         -d "{\"jsonrpc\":\"2.0\",\"method\":\"debug_traceBlockByNumber\",\"params\":[\"$block_hex\", {\"tracer\":\"callTracer\"}],\"id\":1}" \
         http://127.0.0.1:8545 \
     | ./target/release/filter-block-trace $target' \
-    | tee -a results.txt
+    | tee -a data/find-traces-results.txt

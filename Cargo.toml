@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "filter-block-trace",
+    "filter-block-trace", "parse-traces",
 ]
 resolver = "2"
