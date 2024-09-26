@@ -19,5 +19,5 @@ seq $1 $2 | parallel -j 16 --resume-failed --retries 3 --joblog joblog.txt \
     curl -s -X POST -H "Content-Type: application/json" \
         -d "{\"jsonrpc\":\"2.0\",\"method\":\"debug_traceBlockByNumber\",\"params\":[\"$block_hex\", {\"tracer\":\"callTracer\"}],\"id\":1}" \
         http://127.0.0.1:8545 \
-    | ./target/release/trace-history $target' \
+    | ./target/release/filter-block-trace $target' \
     | tee -a results.txt

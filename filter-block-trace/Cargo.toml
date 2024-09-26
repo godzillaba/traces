@@ -1,0 +1,8 @@
+[package]
+name = "filter-block-trace"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde_json = "1.0"
+anyhow = { version = "1.0.89" }
