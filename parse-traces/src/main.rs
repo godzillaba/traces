@@ -13,7 +13,7 @@ struct Call {
 }
 
 impl Call {
-    fn from(value: &Value) -> Self {
+    fn from_json(value: &Value) -> Self {
         Self {
             call_type: value["type"].as_str().unwrap_or_default().to_string(),
             selector: if value["input"].as_str().unwrap_or_default().len() >= 10 {
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
         for call in flattened_calls.iter() {
             if let Some(to) = call["to"].as_str() {
                 if to.to_ascii_lowercase() == target_address {
-                    call_set.insert(Call::from(call));
+                    call_set.insert(Call::from_json(call));
                 }
             }
         }
