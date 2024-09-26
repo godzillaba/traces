@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use regex::Regex;
-use reqwest;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::env;
+use std::io::{self, Read};
 
 fn dfs_has_call(call: &Value, target_address: &str) -> bool {
     if let Some(to) = call["to"].as_str() {
@@ -24,42 +24,29 @@ fn dfs_has_call(call: &Value, target_address: &str) -> bool {
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        anyhow::bail!("Usage: {} <block_number> <target_address>", args[0]);
+    if args.len() != 2 {
+        anyhow::bail!("Usage: {} <target_address>", args[0]);
     }
-    let block_number: u64 = args[1].parse().context("Failed to parse block number")?;
-    let target_address = &args[2];
+    let target_address = &args[1];
 
-    let eth_rpc_url = "http://192.168.1.40:8545";
-
-    let request_body = json!({
-        "jsonrpc": "2.0",
-        "method": "debug_traceBlockByNumber",
-        "params": [format!("0x{:x}", block_number), {"tracer": "callTracer"}],
-        "id": 1
-    });
-
-    let client = reqwest::blocking::Client::new();
-    let response = client
-        .post(eth_rpc_url)
-        .json(&request_body)
-        .send()
-        .context("Failed to send request to Ethereum node")?;
-
-    let response_text = response.text().context("Failed to get response text")?;
+    let mut input = String::new();
+    io::stdin()
+        .read_to_string(&mut input)
+        .context("Failed to read from stdin")?;
+    input.make_ascii_lowercase();
 
     // Perform a quick check for the target address
     let address_regex =
         Regex::new(&regex::escape(target_address)).context("Failed to create regex")?;
 
-    if !address_regex.is_match(&response_text) {
+    if !address_regex.is_match(&input) {
         // Target address not found, exit early
         return Ok(());
     }
 
-    // If we've reached here, the address is in the response, so we parse the JSON
+    // If we've reached here, the address is in the input, so we parse the JSON
     let response_body: Value =
-        serde_json::from_str(&response_text).context("Failed to parse JSON response")?;
+        serde_json::from_str(&input).context("Failed to parse JSON input")?;
 
     let traces = response_body
         .get("result")

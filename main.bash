@@ -12,5 +12,12 @@ fi
 # make the target lowercase
 target=$(echo $3 | tr '[:upper:]' '[:lower:]')
 
-seq $1 $2 | parallel -j 45 --resume-failed --retries 3 --joblog joblog.txt ./target/release/trace-history {} $target | tee results.txt
+export target
 
+seq $1 $2 | parallel -j 100 --resume-failed --retries 3 --joblog joblog.txt \
+    'block_hex=$(printf "0x%x" {});
+    curl -s -X POST -H "Content-Type: application/json" \
+        -d "{\"jsonrpc\":\"2.0\",\"method\":\"debug_traceBlockByNumber\",\"params\":[\"$block_hex\", {\"tracer\":\"callTracer\"}],\"id\":1}" \
+        http://192.168.1.40:8545 \
+    | ./target/release/trace-history $target' \
+    | tee -a results.txt
