@@ -9,10 +9,12 @@ Use this tool to find and analyze traces that touch certain target accounts.
 To gather all the traces that touch a target contract, use
 
 ```bash
-./find-traces.bash <start block> <end block> <target address1> [<target address2> ...]
+./find-traces <start block> <end block> <target address1> [<target address2> ...]
 ```
 
 Results will land in `data/find-traces-results.txt`, with each transaction trace object on its own line.
+
+You can adjust the number of parallel jobs by changing `-j 16` in `./find-traces`.
 
 This command can be safely stopped and will pick up where it left off when restarted. To completely restart, first remove `data/find-traces-joblog.txt`
 
