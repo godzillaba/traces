@@ -64,7 +64,9 @@ fn main() -> Result<()> {
         }
     }
 
-    // print the set as csv
+    // print the set as csv, sort by from
+    let mut call_set: Vec<Call> = call_set.into_iter().collect();
+    call_set.sort_by(|a, b| a.from.cmp(&b.from));
     for call in call_set.iter() {
         println!("{},{},{}", call.call_type, call.selector.as_deref().unwrap_or_default(), call.from);
     }
