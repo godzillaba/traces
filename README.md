@@ -34,3 +34,8 @@ To copy to clipboard to put into a spreadsheet
 ```bash
 cargo run --bin parse-traces -- <target> | grep -v toplevel | ./pretty-selectors | clipcopy
 ```
+
+To fetch contract names from Etherscan. Make sure you put `./find-contract-names` before `./pretty-selectors` otherwise it won't work.
+```bash
+cargo run --bin parse-traces -- <target> | grep -v toplevel | ./find-contract-names | ./pretty-selectors
+```
