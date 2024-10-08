@@ -25,11 +25,15 @@ fn main() -> Result<()> {
     let target_addresses = env::args().skip(1).collect::<Vec<String>>();
 
     let mut input = String::new();
-    io::stdin().read_to_string(&mut input).context("Failed to read from stdin")?;
+    io::stdin()
+        .read_to_string(&mut input)
+        .context("Failed to read from stdin")?;
     input.make_ascii_lowercase();
 
     // Quick check for the target addresses (case-insensitive), targets already lower case
-    let found = target_addresses.iter().any(|target_address| input.contains(target_address));
+    let found = target_addresses
+        .iter()
+        .any(|target_address| input.contains(target_address));
     if !found {
         return Ok(());
     }

@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "filter-block-trace", "parse-traces",
+    "filter-block-trace", "make-pretty-tsv"
 ]
 resolver = "2"
