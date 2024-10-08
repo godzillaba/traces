@@ -20,11 +20,16 @@ targets=$(cat targets.csv | tr '[:upper:]' '[:lower:]' | cut -d ',' -f1)
 
 export targets
 
+# if the last line of the results file is "DONE", then remove that line
+if [ -f data/find-traces-results.txt ] && [ "$(tail -n 1 data/find-traces-results.txt)" == "DONE" ]; then
+    sed -i '$ d' data/find-traces-results.txt
+fi
+
 seq $start_block $end_block | parallel -j 16 --resume-failed --retries 3 --joblog data/find-traces-joblog.txt \
     'block_hex=$(printf "0x%x" {});
     curl -s -X POST -H "Content-Type: application/json" \
         -d "{\"jsonrpc\":\"2.0\",\"method\":\"debug_traceBlockByNumber\",\"params\":[\"$block_hex\", {\"tracer\":\"callTracer\"}],\"id\":1}" \
-        http://192.168.1.40:8545 \
+        http://127.0.0.1:8545 \
     | ./target/release/filter-block-trace $targets' \
     >> data/find-traces-results.txt
 

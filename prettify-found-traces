@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+cargo build --release
+
+tail -f -n +1 data/find-traces-results.txt | ./target/release/make-pretty-tsv
