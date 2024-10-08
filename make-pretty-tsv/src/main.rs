@@ -182,16 +182,24 @@ fn fetch_signature(selector: &str, selector_cache: &mut HashMap<String, String>)
         serde_json::from_str(&response.text().context("Failed to read response body")?)
             .context("Failed to parse JSON response")?;
 
-    let signature = response_body["result"].as_object().unwrap()["function"]
+    let selector_obj = &response_body["result"].as_object().unwrap()["function"]
         .as_object()
-        .unwrap()[selector]
-        .as_array()
-        .unwrap()[0]
-        .as_object()
-        .unwrap()["name"]
-        .as_str()
-        .unwrap()
-        .to_string();
+        .unwrap()[selector];
+
+    let signature: String;
+    
+    if selector_obj.is_null() {
+        signature = selector.to_string();
+    } else {
+        signature = selector_obj
+            .as_array()
+            .unwrap()[0]
+            .as_object()
+            .unwrap()["name"]
+            .as_str()
+            .unwrap()
+            .to_string();
+    }
 
     // put the signature into the cache
     selector_cache.insert(selector.to_string(), signature.to_string());
