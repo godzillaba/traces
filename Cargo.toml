@@ -1,5 +1,7 @@
 [workspace]
-members = [
-    "filter-block-trace", "make-pretty-tsv"
+members = [ 
+    "create-spreadsheet",
+    "filter-block-trace", 
+    "make-pretty-tsv"
 ]
 resolver = "2"

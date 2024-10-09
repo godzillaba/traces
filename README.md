@@ -4,12 +4,18 @@ Use this tool to find and analyze traces that touch certain target accounts.
 
 ## Usage
 
-### 1. Gather Traces
+This assumes your rpc is `localhost:8545`. To change, edit `./cmd/find-traces`
 
-To gather all the traces that touch a target contract, use
+### 1. Set Targets
+
+Set a list of `target_address,target_label` in `targets.csv`
+
+### 2. Gather Traces
+
+To gather all the traces that touch the targets, use
 
 ```bash
-./find-traces <start block> <end block> <target address1> [<target address2> ...]
+./cmd/find-traces <start block> <end block>
 ```
 
 Results will land in `data/find-traces-results.txt`, with each transaction trace object on its own line.
@@ -18,24 +24,16 @@ You can adjust the number of parallel jobs by changing `-j 16` in `./find-traces
 
 This command can be safely stopped and will pick up where it left off when restarted. To completely restart, first remove `data/find-traces-joblog.txt`
 
-### 2. Parse traces for a certain target
+### 3. Parse Gathered Traces
 
-This will print a csv with call type, selector, and from
+While `./cmd/find-traces` is still running or has finished, run:
+
 ```bash
-cargo run --bin parse-traces -- <target>
+./cmd/prettify-found-traces
 ```
 
-To exclude top level calls and pretty print selectors, use
-```bash
-cargo run --bin parse-traces -- <target> | grep -v toplevel | ./pretty-selectors
-```
+This will watch for new traces and find the function signatures and contract names. Its output is `data/pretty-traces.tsv`
 
-To copy to clipboard to put into a spreadsheet
-```bash
-cargo run --bin parse-traces -- <target> | grep -v toplevel | ./pretty-selectors | clipcopy
-```
+### 4. Create a Spreadsheet
 
-To fetch contract names from Etherscan. Make sure you put `./find-contract-names` before `./pretty-selectors` otherwise it won't work.
-```bash
-cargo run --bin parse-traces -- <target> | grep -v toplevel | ./find-contract-names | ./pretty-selectors
-```
+Once 2 and 3 are done, use `./cmd/create-spreadsheet` to create `data/spreadsheet.xlsx`

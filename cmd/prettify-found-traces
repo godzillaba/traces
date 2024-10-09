@@ -4,4 +4,4 @@ set -e
 
 cargo build --release
 
-tail -f -n +1 data/find-traces-results.txt | ./target/release/make-pretty-tsv
+tail -f -n +1 data/find-traces-results.txt | ./target/release/make-pretty-tsv > data/pretty-traces.tsv

@@ -1,4 +1,9 @@
-use std::{collections::HashMap, env, fs::File, io::Write};
+use std::{
+    collections::{HashMap, HashSet},
+    env,
+    fs::File,
+    io::Write,
+};
 
 use reqwest;
 
@@ -44,7 +49,7 @@ struct PrettyCall {
 
 impl PrettyCall {
     fn from_ugly_call(
-        ugly_call: UglyCall,
+        ugly_call: &UglyCall,
         contract_name_cache: &mut HashMap<String, String>,
         selector_cache: &mut HashMap<String, String>,
     ) -> Result<Self> {
@@ -53,10 +58,10 @@ impl PrettyCall {
         let signature = fetch_signature(&ugly_call.selector, selector_cache)?;
 
         Ok(Self {
-            call_type: ugly_call.call_type,
+            call_type: ugly_call.call_type.clone(),
             signature,
-            from: ugly_call.from,
-            to: ugly_call.to,
+            from: ugly_call.from.clone(),
+            to: ugly_call.to.clone(),
             from_name,
             to_name,
         })
@@ -187,15 +192,11 @@ fn fetch_signature(selector: &str, selector_cache: &mut HashMap<String, String>)
         .unwrap()[selector];
 
     let signature: String;
-    
+
     if selector_obj.is_null() {
         signature = selector.to_string();
     } else {
-        signature = selector_obj
-            .as_array()
-            .unwrap()[0]
-            .as_object()
-            .unwrap()["name"]
+        signature = selector_obj.as_array().unwrap()[0].as_object().unwrap()["name"]
             .as_str()
             .unwrap()
             .to_string();
@@ -274,6 +275,9 @@ fn main() -> Result<()> {
     // load contract name cache into a hashmap
     let mut contract_name_cache = load_contract_name_cache()?;
 
+    // keep track of calls we've seen already
+    let mut call_set: HashSet<UglyCall> = HashSet::new();
+
     // read stdin line by line
     let mut input = String::new();
     while let Ok(n) = std::io::stdin().read_line(&mut input) {
@@ -303,12 +307,19 @@ fn main() -> Result<()> {
         for call in flattened_calls.iter() {
             let ugly_call = UglyCall::from_json(call);
 
+            if call_set.contains(&ugly_call) {
+                continue;
+            }
+
             if targets.contains(&ugly_call.to) || targets.contains(&ugly_call.from) {
                 let pretty_call = PrettyCall::from_ugly_call(
-                    ugly_call,
+                    &ugly_call,
                     &mut contract_name_cache,
                     &mut selector_cache,
                 )?;
+
+                call_set.insert(ugly_call);
+
                 println!(
                     "{}\t{}\t{}\t{}\t{}\t{}",
                     pretty_call.call_type,
