@@ -164,10 +164,6 @@ fn dfs_flatten_calls<'a>(call: &'a Value, call_set: &mut Vec<&'a Value>) {
 
 // fetch the signature from selector
 fn fetch_signature(selector: &str, selector_cache: &mut HashMap<String, String>) -> Result<String> {
-    // curl -X 'GET' \
-    //     'https://api.openchain.xyz/signature-database/v1/lookup?function=0x4870496f&filter=true' \
-    //     -H 'accept: application/json'
-
     // if the selector is empty, return empty string
     if selector.is_empty() {
         return Ok("".to_string());

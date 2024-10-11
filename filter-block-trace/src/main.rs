@@ -28,6 +28,12 @@ fn main() -> Result<()> {
     io::stdin()
         .read_to_string(&mut input)
         .context("Failed to read from stdin")?;
+
+    // check if there's an error in the input
+    if input.contains("\"error\"") {
+        return Err(anyhow::anyhow!("Error in input: {}", input));
+    }
+
     input.make_ascii_lowercase();
 
     // Quick check for the target addresses (case-insensitive), targets already lower case
