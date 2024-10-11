@@ -5,7 +5,10 @@ use std::{
     io::Write,
 };
 
-use reqwest;
+use reqwest::{
+    self,
+    header::{ACCEPT, CONTENT_TYPE},
+};
 
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
@@ -209,6 +212,38 @@ fn fetch_signature(selector: &str, selector_cache: &mut HashMap<String, String>)
     Ok(signature)
 }
 
+fn has_code(address: &str) -> Result<bool> {
+    if address.is_empty() {
+        return Ok(false);
+    }
+
+    let response = reqwest::blocking::Client::new()
+        .post(env::var("ETH_URL").context("Missing ETH_URL")?)
+        .header(CONTENT_TYPE, "application/json")
+        .header(ACCEPT, "application/json")
+        .body(
+            json!({
+                "jsonrpc": "2.0",
+                "method": "eth_getCode",
+                "params": [address, "latest"],
+                "id": 1
+            })
+            .to_string(),
+        )
+        .send()
+        .context("Failed to send request")?;
+
+    let response_body: Value =
+        serde_json::from_str(&response.text().context("Failed to read response body")?)
+            .context("Failed to parse JSON response")?;
+
+    if response_body["result"].as_str().unwrap() == "0x" {
+        return Ok(false);
+    }
+
+    Ok(true)
+}
+
 // fetch the contract name
 fn fetch_contract_name(
     address: &str,
@@ -222,41 +257,51 @@ fn fetch_contract_name(
         return Ok(contract_name.to_string());
     }
 
-    let url = format!(
-        "https://api.etherscan.io/api?module=contract&action=getsourcecode&address={}&apikey={}",
-        address,
-        env::var("ETHERSCAN_API_KEY").context("Missing ETHERSCAN_API_KEY")?
-    );
-    let response = reqwest::blocking::get(&url).context("Failed to fetch contract name")?;
-    let response_body: Value =
-        serde_json::from_str(&response.text().context("Failed to read response body")?)
-            .context("Failed to parse JSON response")?;
+    let contract_name = match has_code(address)? {
+        false => "?EOA".to_string(),
+        true => {
+            let url = format!(
+                "https://api.etherscan.io/api?module=contract&action=getsourcecode&address={}&apikey={}",
+                address,
+                env::var("ETHERSCAN_API_KEY").context("Missing ETHERSCAN_API_KEY")?
+            );
+            let response = reqwest::blocking::get(&url).context("Failed to fetch contract name")?;
+            let response_body: Value =
+                serde_json::from_str(&response.text().context("Failed to read response body")?)
+                    .context("Failed to parse JSON response")?;
 
-    let result = response_body["result"]
-        .as_array()
-        .context("No result in response body")?
-        .get(0)
-        .context("No result in response body")?;
+            let result = response_body["result"]
+                .as_array()
+                .context("No result in response body")?
+                .get(0)
+                .context("No result in response body")?;
 
-    let mut contract_name = result
-        .get("ContractName")
-        .context("No ContractName in response body")?
-        .as_str()
-        .context("ContractName is not a string")?
-        .to_string();
+            let mut contract_name = result
+                .get("ContractName")
+                .context("No ContractName in response body")?
+                .as_str()
+                .context("ContractName is not a string")?
+                .to_string();
 
-    let implementation = result
-        .get("Implementation")
-        .context("No Implementation in response body")?
-        .as_str()
-        .context("Implementation is not a string")?;
+            let implementation = result
+                .get("Implementation")
+                .context("No Implementation in response body")?
+                .as_str()
+                .context("Implementation is not a string")?;
 
-    if !implementation.is_empty() {
-        let impl_name = fetch_contract_name(implementation, contract_name_cache)?;
-        contract_name = contract_name.to_string() + " -> " + &impl_name;
-    }
+            // if the contract is a proxy, fetch the implementation contract name
+            if !implementation.is_empty() && implementation != address {
+                let impl_name = fetch_contract_name(implementation, contract_name_cache)?;
+                contract_name = contract_name.to_string() + " -> " + &impl_name;
+            }
 
-    // if the contract is a proxy, fetch the implementation contract name
+            if contract_name.is_empty() {
+                "?Unknown".to_string()
+            } else {
+                contract_name
+            }
+        }
+    };
 
     put_to_contract_name_cache(address, contract_name.as_str())?;
 
@@ -306,6 +351,10 @@ fn main() -> Result<()> {
 
         for call in flattened_calls.iter() {
             let ugly_call = UglyCall::from_json(call);
+
+            if ugly_call.call_type == "toplevel" {
+                continue;
+            }
 
             if call_set.contains(&ugly_call) {
                 continue;

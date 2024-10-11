@@ -6,8 +6,6 @@ cargo build --release
 
 mkdir -p data
 
-# we take at least 3 args: start block, end block, and one or more target addresses
-
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <start block> <end block>"
     exit 1
