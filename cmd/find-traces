@@ -2,14 +2,20 @@
 
 set -e
 
-cargo build --release
-
-mkdir -p data
-
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <start block> <end block>"
     exit 1
 fi
+
+# ensure the RPC_URL environment variable is set
+if [ -z "$RPC_URL" ]; then
+    echo "RPC_URL environment variable is not set"
+    exit 1
+fi
+
+cargo build --release
+
+mkdir -p data
 
 start_block=$1
 end_block=$2
@@ -27,7 +33,7 @@ seq $start_block $end_block | parallel -j 16 --resume-failed --retries 3 --joblo
     'block_hex=$(printf "0x%x" {});
     curl -s -X POST -H "Content-Type: application/json" \
         -d "{\"jsonrpc\":\"2.0\",\"method\":\"debug_traceBlockByNumber\",\"params\":[\"$block_hex\", {\"tracer\":\"callTracer\"}],\"id\":1}" \
-        http://127.0.0.1:8545 \
+        $RPC_URL \
     | ./target/release/filter-block-trace $targets' \
     >> data/find-traces-results.txt
 

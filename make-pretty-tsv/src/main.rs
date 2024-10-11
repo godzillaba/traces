@@ -218,7 +218,7 @@ fn has_code(address: &str) -> Result<bool> {
     }
 
     let response = reqwest::blocking::Client::new()
-        .post(env::var("ETH_URL").context("Missing ETH_URL")?)
+        .post(env::var("RPC_URL").context("Missing RPC_URL")?)
         .header(CONTENT_TYPE, "application/json")
         .header(ACCEPT, "application/json")
         .body(
