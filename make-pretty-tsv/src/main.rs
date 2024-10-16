@@ -257,7 +257,8 @@ fn fetch_contract_name(
         false => "?EOA".to_string(),
         true => {
             let url = format!(
-                "https://api.etherscan.io/api?module=contract&action=getsourcecode&address={}&apikey={}",
+                "https://{}/api?module=contract&action=getsourcecode&address={}&apikey={}",
+                env::var("ETHERSCAN_DOMAIN").context("Missing ETHERSCAN_DOMAIN")?,
                 address,
                 env::var("ETHERSCAN_API_KEY").context("Missing ETHERSCAN_API_KEY")?
             );
